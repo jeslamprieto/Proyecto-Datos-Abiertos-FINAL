@@ -1,0 +1,9 @@
+# Entorno virtual y archivos de Python
+venv/
+__pycache__/
+*.pyc
+
+# Configuración local con contraseñas: NUNCA se sube
+.env
+
+.vs/

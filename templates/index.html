@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+{#
+  templates/index.html
+  VISTA (la "V" de MVC)
+
+  Esta plantilla solo MUESTRA lo que le manda el controlador (app.py).
+  No se conecta a SQL Server ni llama a la API. Usa Jinja2:
+    dobles llaves      -> imprimen un valor
+    llave con porcentaje -> instrucciones (for, if)
+  Usamos este tipo de comentario de Jinja porque si se escriben esas
+  marcas dentro de un comentario HTML normal, Jinja igual las intenta
+  ejecutar y sale error (nos pasó en las pruebas).
+#}
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hurtos de vehículos en Colombia · Datos Abiertos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body>
+
+<header class="encabezado">
+    <div class="contenedor">
+        <p class="etiqueta">Proyecto integrador · Datos Abiertos Colombia</p>
+        <h1>Sistema de Consulta de Hurtos de Automotores y Motocicletas</h1>
+        <p class="subtitulo">
+            Información obtenida de la API de
+            <a href="https://www.datos.gov.co/d/9vha-vh9n" target="_blank" rel="noopener">datos.gov.co</a>
+            (recurso <code>9vha-vh9n</code>, Policía Nacional), guardada en SQL Server
+            y consultada desde esta página.
+        </p>
+    </div>
+</header>
+
+<main class="contenedor">
+
+    <!-- Mensajes que manda el controlador con flash() después de sincronizar -->
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% for categoria, mensaje in mensajes %}
+            <div class="alerta alerta-{{ categoria }}">{{ mensaje }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    {% if error_bd %}
+        <div class="alerta alerta-error">
+            <strong>No se pudo consultar SQL Server.</strong>
+            Revisa que el servicio esté encendido y que el archivo .env esté bien configurado.
+            <br><small>Detalle técnico: {{ error_bd }}</small>
+        </div>
+    {% endif %}
+
+    <!-- ============ 1. SINCRONIZAR ============ -->
+    <section class="tarjeta">
+        <h2><span class="numero">1</span> Consultar la API y guardar datos</h2>
+        <p class="ayuda">
+            Trae registros de la API y guarda en SQL Server solo los que no existen.
+            Si se repite la misma posición, los registros no se duplican.
+        </p>
+
+        <form action="{{ url_for('sincronizar') }}" method="POST" class="formulario-linea">
+            <label>
+                Cantidad de registros
+                <select name="cantidad">
+                    {% for c in cantidades %}
+                        <option value="{{ c }}" {% if c == 100 %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                Desde la posición
+                <input type="number" name="desde" value="0" min="0" step="1">
+            </label>
+            <button type="submit" class="boton boton-principal">Consultar API y guardar</button>
+        </form>
+        <p class="nota">
+            En la base de datos hay <strong>{{ total_general|miles }}</strong> registros guardados.
+            Para traer registros distintos, cambia la posición (por ejemplo 100, 200, 300...).
+        </p>
+    </section>
+
+    <!-- ============ 2. RESUMEN ============ -->
+    {% if resumen %}
+    <section class="tarjeta">
+        <h2><span class="numero">2</span> Resumen de los datos
+            {% if filtros.texto or filtros.tipo or filtros.genero %}<small>(según el filtro aplicado)</small>{% endif %}
+        </h2>
+
+        <div class="indicadores">
+            <div class="indicador">
+                <span class="valor">{{ resumen.total_registros|miles }}</span>
+                <span class="nombre">Registros</span>
+            </div>
+            <div class="indicador">
+                <span class="valor">{{ resumen.total_vehiculos|miles }}</span>
+                <span class="nombre">Vehículos hurtados</span>
+            </div>
+            <div class="indicador">
+                <span class="valor valor-pequeno">
+                    {{ resumen.fecha_minima|fecha }} – {{ resumen.fecha_maxima|fecha }}
+                </span>
+                <span class="nombre">Periodo de los hechos</span>
+            </div>
+        </div>
+
+        <div class="columnas">
+            <div>
+                <h3>Por tipo de hurto</h3>
+                {% set maximo = resumen.por_tipo[0].vehiculos if resumen.por_tipo else 1 %}
+                {% for fila in resumen.por_tipo %}
+                    <div class="barra-fila">
+                        <span class="barra-texto">{{ (fila.tipo_hurto or 'Sin dato')|replace('ARTÍCULO 239. ', '')|title }}</span>
+                        <div class="barra"><div class="barra-relleno" style="width: {{ (fila.vehiculos / maximo * 100)|round(1) }}%"></div></div>
+                        <span class="barra-valor">{{ fila.vehiculos|miles }}</span>
+                    </div>
+                {% else %}
+                    <p class="vacio">Sin datos.</p>
+                {% endfor %}
+            </div>
+            <div>
+                <h3>Top 5 departamentos</h3>
+                {% set maximo = resumen.top_departamentos[0].vehiculos if resumen.top_departamentos else 1 %}
+                {% for fila in resumen.top_departamentos %}
+                    <div class="barra-fila">
+                        <span class="barra-texto">{{ (fila.departamento or 'Sin dato')|title }}</span>
+                        <div class="barra"><div class="barra-relleno barra-secundaria" style="width: {{ (fila.vehiculos / maximo * 100)|round(1) }}%"></div></div>
+                        <span class="barra-valor">{{ fila.vehiculos|miles }}</span>
+                    </div>
+                {% else %}
+                    <p class="vacio">Sin datos.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- ============ 3. CONSULTA ============ -->
+    <section class="tarjeta">
+        <h2><span class="numero">3</span> Registros almacenados en SQL Server</h2>
+
+        <form action="{{ url_for('inicio') }}" method="GET" class="formulario-linea">
+            <label class="crece">
+                Departamento o municipio
+                <input type="text" name="q" value="{{ filtros.texto }}" placeholder="Ej: Antioquia, Cali, Bogotá">
+            </label>
+            <label>
+                Tipo de hurto
+                <select name="tipo">
+                    <option value="">Todos</option>
+                    {% for t in tipos %}
+                        <option value="{{ t }}" {% if t == filtros.tipo %}selected{% endif %}>{{ t|replace('ARTÍCULO 239. ', '')|title }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                Género
+                <select name="genero">
+                    <option value="">Todos</option>
+                    {% for g in generos %}
+                        <option value="{{ g }}" {% if g == filtros.genero %}selected{% endif %}>{{ g|title }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <button type="submit" class="boton">Buscar</button>
+            <a href="{{ url_for('inicio') }}" class="boton boton-claro">Limpiar</a>
+        </form>
+
+        <p class="nota">
+            Mostrando {{ registros|length }} registro(s)
+            {% if registros|length == 100 %}(máximo 100 por consulta, los más recientes){% endif %}.
+        </p>
+
+        <div class="tabla-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Departamento</th>
+                        <th>Municipio</th>
+                        <th>Tipo de hurto</th>
+                        <th>Arma / medio</th>
+                        <th>Género</th>
+                        <th>Grupo etario</th>
+                        <th class="derecha">Cant.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fila in registros %}
+                        <tr>
+                            <td>{{ fila.fecha_hecho|fecha }}</td>
+                            <td>{{ (fila.departamento or '')|title }}</td>
+                            <td>{{ fila.municipio or '' }}</td>
+                            <td>
+                                {% if 'MOTO' in (fila.tipo_hurto or '') %}
+                                    <span class="chip chip-moto">Motocicleta</span>
+                                {% elif 'AUTOMOTOR' in (fila.tipo_hurto or '') %}
+                                    <span class="chip chip-carro">Automotor</span>
+                                {% else %}
+                                    {{ fila.tipo_hurto }}
+                                {% endif %}
+                            </td>
+                            <td>{{ (fila.armas_medios or '')|title }}</td>
+                            <td>{{ (fila.genero or '')|title }}</td>
+                            <td>{{ (fila.grupo_etario or '')|title }}</td>
+                            <td class="derecha">{{ fila.cantidad }}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="vacio">
+                                No hay registros para mostrar. Si la tabla está vacía, usa el botón
+                                "Consultar API y guardar" del paso 1.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer class="pie">
+    <div class="contenedor">
+        Desarrollo de Aplicaciones con Acceso a Datos · Python + Flask + SQL Server · Patrón MVC
+    </div>
+</footer>
+
+</body>
+</html>

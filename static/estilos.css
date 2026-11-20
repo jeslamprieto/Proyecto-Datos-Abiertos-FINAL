@@ -1,0 +1,126 @@
+/* static/estilos.css
+   Estilos de la vista. Son opcionales según la guía, pero ayudan a que
+   la tabla y el resumen se lean mejor. Colores inspirados en la bandera
+   (amarillo, azul, rojo) pero en tonos suaves. */
+
+:root {
+    --azul: #1f3a68;
+    --azul-claro: #e8eef8;
+    --amarillo: #f2b705;
+    --rojo: #c0392b;
+    --verde: #1e8449;
+    --texto: #222;
+    --gris: #6b7280;
+    --borde: #dde2ea;
+    --fondo: #f5f6f8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    color: var(--texto);
+    background: var(--fondo);
+    line-height: 1.5;
+}
+
+.contenedor {
+    max-width: 1150px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* ---------- Encabezado ---------- */
+.encabezado {
+    background: var(--azul);
+    color: #fff;
+    padding: 28px 0 24px;
+    border-bottom: 5px solid var(--amarillo);
+    margin-bottom: 24px;
+}
+.encabezado h1 { margin: 4px 0 8px; font-size: 1.7rem; }
+.encabezado a { color: var(--amarillo); }
+.encabezado code { background: rgba(255,255,255,.15); padding: 1px 6px; border-radius: 4px; }
+.etiqueta { margin: 0; text-transform: uppercase; letter-spacing: .08em; font-size: .75rem; opacity: .8; }
+.subtitulo { margin: 0; max-width: 760px; opacity: .92; }
+
+/* ---------- Tarjetas (cada sección) ---------- */
+.tarjeta {
+    background: #fff;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+}
+.tarjeta h2 { margin: 0 0 6px; font-size: 1.2rem; color: var(--azul); }
+.tarjeta h2 small { font-weight: normal; color: var(--gris); font-size: .85rem; }
+.tarjeta h3 { font-size: 1rem; margin: 18px 0 10px; }
+.numero {
+    display: inline-block; width: 26px; height: 26px; line-height: 26px;
+    text-align: center; border-radius: 50%;
+    background: var(--amarillo); color: var(--azul); font-size: .9rem; margin-right: 6px;
+}
+.ayuda, .nota { color: var(--gris); font-size: .9rem; margin: 4px 0 12px; }
+
+/* ---------- Formularios ---------- */
+.formulario-linea { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.formulario-linea label { display: flex; flex-direction: column; font-size: .85rem; color: var(--gris); gap: 4px; }
+.formulario-linea .crece { flex: 1 1 240px; }
+input, select {
+    font: inherit; padding: 8px 10px;
+    border: 1px solid var(--borde); border-radius: 6px; background: #fff; min-width: 120px;
+}
+input:focus, select:focus { outline: 2px solid var(--azul-claro); border-color: var(--azul); }
+
+.boton {
+    font: inherit; cursor: pointer; text-decoration: none; display: inline-block;
+    padding: 8px 16px; border-radius: 6px; border: 1px solid var(--azul);
+    background: var(--azul); color: #fff;
+}
+.boton:hover { opacity: .9; }
+.boton-principal { background: var(--amarillo); border-color: var(--amarillo); color: var(--azul); font-weight: 600; }
+.boton-claro { background: #fff; color: var(--azul); }
+
+/* ---------- Alertas (mensajes flash) ---------- */
+.alerta { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; border-left: 5px solid; }
+.alerta-success { background: #eafaf1; border-color: var(--verde); }
+.alerta-error   { background: #fdecea; border-color: var(--rojo); }
+.alerta-info    { background: var(--azul-claro); border-color: var(--azul); }
+.alerta small { color: var(--gris); word-break: break-word; }
+
+/* ---------- Resumen ---------- */
+.indicadores { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 12px; }
+.indicador { background: var(--azul-claro); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; }
+.indicador .valor { font-size: 1.8rem; font-weight: 700; color: var(--azul); }
+.indicador .valor-pequeno { font-size: 1.1rem; padding-top: 8px; }
+.indicador .nombre { color: var(--gris); font-size: .85rem; }
+
+.columnas { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+.barra-fila { display: grid; grid-template-columns: 150px 1fr 60px; gap: 10px; align-items: center; margin-bottom: 8px; font-size: .9rem; }
+.barra { background: #eef0f3; border-radius: 4px; height: 14px; overflow: hidden; }
+.barra-relleno { background: var(--azul); height: 100%; }
+.barra-secundaria { background: var(--amarillo); }
+.barra-valor { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------- Tabla ---------- */
+.tabla-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--borde); text-align: left; white-space: nowrap; }
+th { background: var(--azul); color: #fff; font-weight: 600; position: sticky; top: 0; }
+tbody tr:nth-child(even) { background: #fafbfc; }
+tbody tr:hover { background: var(--azul-claro); }
+.derecha { text-align: right; }
+.vacio { color: var(--gris); text-align: center; padding: 20px; white-space: normal; }
+
+.chip { padding: 2px 8px; border-radius: 10px; font-size: .8rem; font-weight: 600; }
+.chip-moto  { background: #fff4d6; color: #8a6500; }
+.chip-carro { background: var(--azul-claro); color: var(--azul); }
+
+/* ---------- Pie de página ---------- */
+.pie { color: var(--gris); font-size: .85rem; padding: 20px 0 30px; text-align: center; }
+
+@media (max-width: 600px) {
+    .encabezado h1 { font-size: 1.3rem; }
+    .barra-fila { grid-template-columns: 110px 1fr 50px; }
+}
